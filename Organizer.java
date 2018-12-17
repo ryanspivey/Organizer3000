@@ -15,7 +15,6 @@ package com.organizer.eclipse.ide.first;
  *
  *		Extra Features:
  *			*also add tags, comments, & ratings
- *			*Pretty up the UI
  *			*make it so whatever is in the clipboard is automatically in the textfield for input when entering a new link/content
  *			*Add sorting to the content added to a specific category- Date added, alphabetic, etc
  *			*Search for specific words within links
@@ -26,9 +25,12 @@ package com.organizer.eclipse.ide.first;
  *			*Research adding content to program when highlighting text and right-clicking(this will most likely require installing to the system)
  *			*Check for broken/dead links every time a category is opened
  *			*Add duplicate a category
+ *			*Splice title off beginning of link when copying to clipboard
+ *			*Switch to JScrollPane
  */
 
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
@@ -52,8 +54,8 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
 public class Organizer extends JFrame {
-	private final int WINDOW_WIDTH = 500;
-	private final int WINDOW_HEIGHT = 300;
+	private final int WINDOW_WIDTH = 650;
+	private final int WINDOW_HEIGHT = 450;
 	public String category;
 	public Category categoryObj;
 	public JList categoryList;
@@ -61,7 +63,9 @@ public class Organizer extends JFrame {
 	public JList deleteCategoryList;
 	public JList editButtonList;
 	public JList viewButtonList;
+	public JList southPanelList;
 	public JPanel viewCatPanel;
+	public JPanel southPanel = new JPanel();
 
 	public Organizer() {
 		setTitle("Organizer 3000");
@@ -91,8 +95,22 @@ public class Organizer extends JFrame {
 		viewPanel.add(categoryList);
 		viewPanel.add(viewCategoryButton);
 		viewPanel.add(editCategoryButton);
-		viewCategoryButton.addActionListener(e -> viewButtonListener());
-		editCategoryButton.addActionListener(e -> editButtonListener());
+		viewCategoryButton.addActionListener(e -> {
+			try {
+				viewButtonListener();
+			} catch (FileNotFoundException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		});
+		editCategoryButton.addActionListener(e -> {
+			try {
+				editButtonListener();
+			} catch (FileNotFoundException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		});
 
 		// create panel
 		createPanel.add(addCategoryButton, BorderLayout.CENTER);
@@ -103,11 +121,15 @@ public class Organizer extends JFrame {
 		deletePanel.add(deleteCategoryButton);
 		deleteCategoryButton.addActionListener(e -> deleteCategoryButtonListener());
 
-		JTabbedPane tabbedPane = new JTabbedPane();
+		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		tabbedPane.addTab("View/Append-to Categories", viewPanel);
 		tabbedPane.addTab("Create Category", createPanel);
 		tabbedPane.addTab("Delete Category", deletePanel);
-		add(tabbedPane);
+		add(tabbedPane, BorderLayout.NORTH);
+
+		// southern panel of application
+		southPanel.setLayout(new BorderLayout());
+		add(southPanel, BorderLayout.CENTER);
 
 		setVisible(true);
 
@@ -130,59 +152,38 @@ public class Organizer extends JFrame {
 
 		return listOfFiles;
 	}
-	
-	public void viewButtonListener() {
-		JFrame frame = new JFrame();
-		JButton copyButton = new JButton("Copy to clipboard");
-		JLabel label = new JLabel("View/Copy-to-clipboard");
-		frame.setTitle("View");
-		frame.setSize(1600, 900);
-		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		frame.setLayout(new BorderLayout());
-		frame.add(label, BorderLayout.NORTH);
-		frame.add(copyButton, BorderLayout.CENTER);
-		copyButton.addActionListener(e -> copyButtonListener());
+
+	public void viewButtonListener() throws FileNotFoundException {
+		category = (String) categoryList.getSelectedValue();
+		southPanel.removeAll();
+		southPanelList = new JList(returnContentArray(category));
+		southPanel.add(southPanelList, BorderLayout.CENTER);
+		JButton copyButton2 = new JButton("Copy to clipboard");
+		copyButton2.addActionListener(e -> copyButtonListener());
+		southPanel.add(copyButton2, BorderLayout.EAST);
+		southPanel.revalidate();
+	}
+
+	public void editButtonListener() throws FileNotFoundException {
 
 		category = (String) categoryList.getSelectedValue();
-		try {
-			viewButtonList = new JList(returnContentArray(category));
-			frame.add(viewButtonList, BorderLayout.WEST);
-		} catch (FileNotFoundException e1) {
-			e1.printStackTrace();
-		}
-		frame.setVisible(true);
-	}
-	
-	public void editButtonListener() {
-		JFrame frame = new JFrame();
-		JButton addButton = new JButton("Add Link");
-		JButton deleteButton = new JButton("Delete Link");
-		JLabel label = new JLabel("Add/Delete a link");
-		frame.setTitle("Edit");
-		frame.setSize(1600, 900);
-		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-		frame.setLayout(new BorderLayout());
-		frame.add(label, BorderLayout.NORTH);
-		frame.add(addButton, BorderLayout.CENTER);
-		frame.add(deleteButton, BorderLayout.EAST);
-		deleteButton.addActionListener(e -> deleteButtonListener());
-		addButton.addActionListener(e -> addButtonListener());
-
-		String category = (String) categoryList.getSelectedValue();
 		categoryObj = new Category(category);
-		try {
-			editButtonList = new JList(returnContentArray(category));
-			frame.add(editButtonList, BorderLayout.WEST);
-		} catch (FileNotFoundException e1) {
-			e1.printStackTrace();
-		}
-		frame.setVisible(true);
+		southPanel.removeAll();
+		southPanelList = new JList(returnContentArray(category));
+		southPanel.add(southPanelList, BorderLayout.CENTER);
+		JButton addButton1 = new JButton("Add");
+		JButton deleteButton1 = new JButton("Delete");
+		addButton1.addActionListener(e -> addButtonListener());
+		deleteButton1.addActionListener(e -> deleteButtonListener());
+		southPanel.add(addButton1, BorderLayout.EAST);
+		southPanel.add(deleteButton1, BorderLayout.SOUTH);
+		southPanel.revalidate();
 	}
 
 	// add refreshing to JList
 	// TO-DO: update delete button listener when titling is added to create content
 	public void deleteButtonListener() {
-		String content = (String) editButtonList.getSelectedValue();
+		String content = (String) southPanelList.getSelectedValue();
 		try {
 			ArrayList<String> contentList = new ArrayList<String>();
 			Collections.addAll(contentList, returnContentArray(categoryObj.toString()));
@@ -198,7 +199,6 @@ public class Organizer extends JFrame {
 			for (int i = 0; i < contentList.size(); i++) {
 				pw.write(contentList.get(i));
 				pw.println();
-				editButtonList.updateUI();
 			}
 			pw.close();
 		} catch (FileNotFoundException e1) {
@@ -228,15 +228,15 @@ public class Organizer extends JFrame {
 		}
 		JOptionPane.showMessageDialog(null, "That entry will be added next time you open the application...");
 	}
-	
-	//Copies text from content JList to clipboard
+
+	// Copies text from content JList to clipboard
 	public void copyButtonListener() {
-		String selectedLink = (String) categoryList.getSelectedValue();
+		String selectedLink = (String) southPanelList.getSelectedValue();
 		StringSelection stringSelection = new StringSelection(selectedLink);
 		Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 		clipboard.setContents(stringSelection, null);
 	}
-	
+
 	public void addCategoryButtonListener() {
 		String newCategory = JOptionPane.showInputDialog("Enter the title of a new category:");
 		File newFile = new File("C:\\Users\\Ryan\\Documents\\Organizer\\Categories", newCategory + ".txt");
@@ -246,8 +246,9 @@ public class Organizer extends JFrame {
 		} catch (FileNotFoundException e1) {
 			e1.printStackTrace();
 		}
+		categoryList.revalidate();
 	}
-	
+
 	public void deleteCategoryButtonListener() {
 		String content = (String) deleteCategoryList.getSelectedValue();
 		File newFile = new File("C:\\Users\\Ryan\\Documents\\Organizer\\Categories", content + ".txt");
