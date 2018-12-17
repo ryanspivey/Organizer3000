@@ -14,7 +14,7 @@ package com.organizer.eclipse.ide.first;
  *		
  *
  *		Extra Features:
- *			*Add Titling to content when a link/content is added to a category folder. (also add tags, comments, & ratings)
+ *			*also add tags, comments, & ratings
  *			*Pretty up the UI
  *			*make it so whatever is in the clipboard is automatically in the textfield for input when entering a new link/content
  *			*Add sorting to the content added to a specific category- Date added, alphabetic, etc
@@ -25,7 +25,7 @@ package com.organizer.eclipse.ide.first;
  *			*Add import bookmarks from browser
  *			*Research adding content to program when highlighting text and right-clicking(this will most likely require installing to the system)
  *			*Check for broken/dead links every time a category is opened
- *			*
+ *			*Add duplicate a category
  */
 
 import java.awt.BorderLayout;
@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Scanner;
 
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -56,8 +57,10 @@ public class Organizer extends JFrame {
 	public String category;
 	public Category categoryObj;
 	public JList categoryList;
+	DefaultListModel deleteModel = new DefaultListModel();
 	public JList deleteCategoryList;
-
+	public JList editButtonList;
+	public JList viewButtonList;
 	public JPanel viewCatPanel;
 
 	public Organizer() {
@@ -134,14 +137,13 @@ public class Organizer extends JFrame {
 		JLabel label = new JLabel("View/Copy-to-clipboard");
 		frame.setTitle("View");
 		frame.setSize(1600, 900);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		frame.setLayout(new BorderLayout());
 		frame.add(label, BorderLayout.NORTH);
 		frame.add(copyButton, BorderLayout.CENTER);
 		copyButton.addActionListener(e -> copyButtonListener());
 
 		category = (String) categoryList.getSelectedValue();
-		JList viewButtonList = new JList();
 		try {
 			viewButtonList = new JList(returnContentArray(category));
 			frame.add(viewButtonList, BorderLayout.WEST);
@@ -158,7 +160,7 @@ public class Organizer extends JFrame {
 		JLabel label = new JLabel("Add/Delete a link");
 		frame.setTitle("Edit");
 		frame.setSize(1600, 900);
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		frame.setLayout(new BorderLayout());
 		frame.add(label, BorderLayout.NORTH);
 		frame.add(addButton, BorderLayout.CENTER);
@@ -167,7 +169,6 @@ public class Organizer extends JFrame {
 		addButton.addActionListener(e -> addButtonListener());
 
 		String category = (String) categoryList.getSelectedValue();
-		JList editButtonList = new JList();
 		categoryObj = new Category(category);
 		try {
 			editButtonList = new JList(returnContentArray(category));
@@ -181,7 +182,7 @@ public class Organizer extends JFrame {
 	// add refreshing to JList
 	// TO-DO: update delete button listener when titling is added to create content
 	public void deleteButtonListener() {
-		String content = (String) categoryList.getSelectedValue();
+		String content = (String) editButtonList.getSelectedValue();
 		try {
 			ArrayList<String> contentList = new ArrayList<String>();
 			Collections.addAll(contentList, returnContentArray(categoryObj.toString()));
@@ -197,10 +198,10 @@ public class Organizer extends JFrame {
 			for (int i = 0; i < contentList.size(); i++) {
 				pw.write(contentList.get(i));
 				pw.println();
+				editButtonList.updateUI();
 			}
 			pw.close();
 		} catch (FileNotFoundException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 		JOptionPane.showMessageDialog(null, "That entry will be deleted next time you open the application...");
@@ -208,11 +209,12 @@ public class Organizer extends JFrame {
 
 	// add refreshing to JList
 	public void addButtonListener() {
+		String title = JOptionPane.showInputDialog("Enter a title for the link:") + ": ";
 		String newContent = JOptionPane.showInputDialog("Enter a new link:");
 		try {
 			ArrayList<String> contentList = new ArrayList<String>();
 			Collections.addAll(contentList, returnContentArray(categoryObj.toString()));
-			contentList.add(newContent);
+			contentList.add(title + newContent);
 			File newFile = new File("C:\\Users\\Ryan\\Documents\\Organizer\\Categories",
 					categoryObj.toString() + ".txt");
 			PrintWriter pw = new PrintWriter(new FileOutputStream(newFile, false));
